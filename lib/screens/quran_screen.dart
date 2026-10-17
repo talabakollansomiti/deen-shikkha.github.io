@@ -193,10 +193,14 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   Set<String> _bookmarks = {};
   int? _playingAyah;
   bool _playingAll = false;
+  late List<GlobalKey> _ayahKeys;
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _ayahKeys =
+        List.generate(widget.surah.verses.length, (_) => GlobalKey());
     BookmarkService.getBookmarks()
         .then((b) => setState(() => _bookmarks = b));
     AudioService().onAyahChanged = (idx) {
@@ -206,6 +210,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
           _playingAll =
               idx != null && AudioService().isPlayingAll;
         });
+        if (idx != null) _scrollToAyah(idx);
       }
     };
   }
@@ -213,7 +218,25 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
   @override
   void dispose() {
     AudioService().onAyahChanged = null;
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  // চলমান আয়াতকে স্ক্রিনের মাঝখানে আনা
+  void _scrollToAyah(int idx) {
+    // একটু দেরি করে — যাতে কার্ড রেন্ডার হয়ে যায়
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      final ctx = _ayahKeys[idx].currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.5, // মাঝখানে
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   Future<void> _toggleBookmark(int idx) async {
@@ -260,6 +283,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
         ],
       ),
       body: ListView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(14),
         children: [
           Card(
@@ -309,6 +333,7 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                 _bookmarks.contains('${surah.id}_$i');
             final playing = _playingAyah == i;
             return Card(
+              key: _ayahKeys[i],
               margin: const EdgeInsets.only(bottom: 10),
               color: playing
                   ? const Color(0xFF0E6B3E).withOpacity(0.08)
