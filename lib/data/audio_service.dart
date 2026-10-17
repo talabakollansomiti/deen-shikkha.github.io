@@ -82,7 +82,9 @@ class AudioService {
         _playingSurah == surahId) {
       await stop();
     } else {
-      await playAyah(surahId, ayahIdx, totalAyahs);
+      // ওই আয়াত থেকে শুরু করে সূরার শেষ পর্যন্ত বাজবে
+      await playAyah(surahId, ayahIdx, totalAyahs,
+          playAll: true);
     }
   }
 
