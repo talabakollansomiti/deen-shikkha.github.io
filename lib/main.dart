@@ -141,11 +141,13 @@ class _BootScreenState extends State<_BootScreen> {
 }
 
 class _MenuItem {
+  final String key;
   final String title;
-  final IconData icon;
+  final String emoji;
   final Color color;
   final Widget screen;
-  const _MenuItem(this.title, this.icon, this.color, this.screen);
+  const _MenuItem(
+      this.key, this.title, this.emoji, this.color, this.screen);
 }
 
 class _Category {
@@ -171,51 +173,57 @@ class HomeScreen extends StatelessWidget {
 
   List<_Category> _categories() => [
         _Category('📖 কুরআন ও হাদিস', '', [
-          _MenuItem('পবিত্র কুরআন', Icons.menu_book,
+          _MenuItem('quran', 'পবিত্র কুরআন', '📖',
               const Color(0xFF0E6B3E), const QuranScreen()),
-          _MenuItem('কুরআন সার্চ', Icons.search,
-              const Color(0xFF2E7D5B), const QuranSearchScreen()),
-          _MenuItem('হাদিস', Icons.format_quote,
+          _MenuItem('quran_search', 'কুরআন সার্চ', '🔍',
+              const Color(0xFF2E7D5B),
+              const QuranSearchScreen()),
+          _MenuItem('hadith', 'হাদিস', '💬',
               const Color(0xFF8A6D1B), const HadithScreen()),
-          _MenuItem('৯৯ নাম', Icons.star,
+          _MenuItem('names99', '৯৯ নাম', '🌟',
               const Color(0xFFB8860B), const Names99Screen()),
         ]),
         _Category('🕌 ইবাদত', '', [
-          _MenuItem('নামাজ শিক্ষা', Icons.school,
+          _MenuItem('namaz_guide', 'নামাজ শিক্ষা', '🕌',
               const Color(0xFF1B6FA8), const NamazScreen()),
-          _MenuItem('নামাজের সময়', Icons.access_time,
-              const Color(0xFF1565C0), const NamazTimesScreen()),
-          _MenuItem('নামাজ ট্র্যাকার', Icons.checklist,
-              const Color(0xFF2E7D32), const NamazTrackerScreen()),
-          _MenuItem('তাসবীহ', Icons.fingerprint,
+          _MenuItem('namaz_times', 'নামাজের সময়', '🕐',
+              const Color(0xFF1565C0),
+              const NamazTimesScreen()),
+          _MenuItem('namaz_tracker', 'নামাজ ট্র্যাকার', '✅',
+              const Color(0xFF2E7D32),
+              const NamazTrackerScreen()),
+          _MenuItem('tasbih', 'তাসবীহ', '📿',
               const Color(0xFF6A1B9A), const TasbihScreen()),
-          _MenuItem('রমজান প্ল্যানার', Icons.nightlight,
-              const Color(0xFF1B2A4A), const RamadanScreen()),
+          _MenuItem('ramadan', 'রমজান প্ল্যানার', '🌙',
+              const Color(0xFF1B2A4A),
+              const RamadanScreen()),
         ]),
         _Category('🤲 দোয়া ও যিকির', '', [
-          _MenuItem('দোয়া ও যিকির', Icons.favorite,
+          _MenuItem('dua', 'দোয়া ও যিকির', '🤲',
               const Color(0xFFB23A48), const DuaScreen()),
         ]),
         _Category('📚 জ্ঞান', '', [
-          _MenuItem('ইসলামিক কুইজ', Icons.quiz,
+          _MenuItem('quiz', 'ইসলামিক কুইজ', '❓',
               const Color(0xFF6A4FB3), const QuizScreen()),
-          _MenuItem('সীরাত', Icons.history,
+          _MenuItem('seerah', 'সীরাত', '📜',
               const Color(0xFF3E7C4F), const SeerahScreen()),
-          _MenuItem('নবীদের কাহিনী', Icons.auto_stories,
-              const Color(0xFF5D4037), const ProphetsScreen()),
-          _MenuItem('হজ্জ-উমরাহ', Icons.flight,
+          _MenuItem('prophets', 'নবীদের কাহিনী', '📚',
+              const Color(0xFF5D4037),
+              const ProphetsScreen()),
+          _MenuItem('hajj', 'হজ্জ-উমরাহ', '🕋',
               const Color(0xFF00695C), const HajjScreen()),
         ]),
         _Category('🧮 হিসাব', '', [
-          _MenuItem('যাকাত', Icons.calculate,
+          _MenuItem('zakat', 'যাকাত', '🧮',
               const Color(0xFFEF6C00), const ZakatScreen()),
-          _MenuItem('ফিতরা', Icons.payments,
+          _MenuItem('fitra', 'ফিতরা', '💵',
               const Color(0xFFF9A825), const FitraScreen()),
-          _MenuItem('সদকা ট্র্যাকার', Icons.volunteer_activism,
-              const Color(0xFFAD1457), const SadaqahScreen()),
+          _MenuItem('sadaqah', 'সদকা ট্র্যাকার', '💝',
+              const Color(0xFFAD1457),
+              const SadaqahScreen()),
         ]),
         _Category('📅 অন্যান্য', '', [
-          _MenuItem('হিজরি ক্যালেন্ডার', Icons.calendar_month,
+          _MenuItem('hijri', 'হিজরি ক্যালেন্ডার', '📅',
               const Color(0xFF4E342E), const HijriScreen()),
         ]),
       ];
@@ -281,8 +289,11 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('🕌',
-                          style: TextStyle(fontSize: 48)),
+                      if (config.showLogo)
+                        _AnimatedLogo(
+                          logo: config.logo,
+                          animate: config.animateLogo,
+                        ),
                       const SizedBox(height: 6),
                       Text(
                         config.appName,
@@ -292,10 +303,11 @@ class HomeScreen extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      const Text(
-                        'ইসলামিক জ্ঞানের ভান্ডার',
-                        style:
-                            TextStyle(fontSize: 14, color: Colors.white70),
+                      Text(
+                        config.tagline,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70),
                       ),
                     ],
                   ),
@@ -375,8 +387,14 @@ class HomeScreen extends StatelessWidget {
                   childAspectRatio: 0.78,
                 ),
                 delegate: SliverChildBuilderDelegate(
-                  (context, i) =>
-                      _MenuCard(item: cat.items[i]),
+                  (context, i) {
+                    final item = cat.items[i];
+                    final emoji =
+                        config.menuIcons[item.key] ??
+                            item.emoji;
+                    return _MenuCard(
+                        item: item, iconEmoji: emoji);
+                  },
                   childCount: cat.items.length,
                 ),
               ),
@@ -476,9 +494,59 @@ class _FeaturedCard extends StatelessWidget {
   }
 }
 
+// অ্যানিমেটেড লোগো (pulse)
+class _AnimatedLogo extends StatefulWidget {
+  final String logo;
+  final bool animate;
+  const _AnimatedLogo(
+      {required this.logo, required this.animate});
+
+  @override
+  State<_AnimatedLogo> createState() => _AnimatedLogoState();
+}
+
+class _AnimatedLogoState extends State<_AnimatedLogo>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _anim = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+    if (widget.animate) _ctrl.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.animate) {
+      return Text(widget.logo,
+          style: const TextStyle(fontSize: 48));
+    }
+    return ScaleTransition(
+      scale: _anim,
+      child: Text(widget.logo,
+          style: const TextStyle(fontSize: 48)),
+    );
+  }
+}
+
 class _MenuCard extends StatelessWidget {
   final _MenuItem item;
-  const _MenuCard({required this.item});
+  final String iconEmoji;
+  const _MenuCard({required this.item, required this.iconEmoji});
 
   @override
   Widget build(BuildContext context) {
@@ -495,16 +563,20 @@ class _MenuCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
+              if (iconEmoji.isNotEmpty)
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: item.color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Text(iconEmoji,
+                        style:
+                            const TextStyle(fontSize: 24)),
+                  ),
                 ),
-                child:
-                    Icon(item.icon, size: 24, color: item.color),
-              ),
               const SizedBox(height: 8),
               Text(
                 item.title,

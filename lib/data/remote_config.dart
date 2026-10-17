@@ -4,6 +4,11 @@ import 'package:http/http.dart' as http;
 // Admin panel (control.html) থেকে remote config পড়া
 class RemoteConfig {
   final String appName;
+  final String logo;
+  final bool showLogo;
+  final bool animateLogo;
+  final String tagline;
+  final Map<String, String> menuIcons;
   final bool annEnabled;
   final String annTitle;
   final String annMessage;
@@ -18,6 +23,11 @@ class RemoteConfig {
 
   const RemoteConfig({
     this.appName = 'দীন শিক্ষা',
+    this.logo = '🕌',
+    this.showLogo = true,
+    this.animateLogo = true,
+    this.tagline = 'ইসলামিক জ্ঞানের ভান্ডার',
+    this.menuIcons = const {},
     this.annEnabled = false,
     this.annTitle = '',
     this.annMessage = '',
@@ -41,11 +51,20 @@ class RemoteConfig {
           );
       if (res.statusCode != 200) return const RemoteConfig();
       final d = json.decode(res.body) as Map<String, dynamic>;
+      final b = d['branding'] as Map<String, dynamic>? ?? {};
+      final mi = b['menu_icons'] as Map<String, dynamic>? ?? {};
       final a = d['announcement'] as Map<String, dynamic>? ?? {};
       final f = d['featured'] as Map<String, dynamic>? ?? {};
       final i = d['app_info'] as Map<String, dynamic>? ?? {};
       return RemoteConfig(
         appName: (d['app_name'] ?? 'দীন শিক্ষা').toString(),
+        logo: (b['logo'] ?? '🕌').toString(),
+        showLogo: b['show_logo'] != false,
+        animateLogo: b['animate_logo'] != false,
+        tagline: (b['tagline'] ?? 'ইসলামিক জ্ঞানের ভান্ডার')
+            .toString(),
+        menuIcons: mi.map((k, v) =>
+            MapEntry(k.toString(), v.toString())),
         annEnabled: a['enabled'] == true,
         annTitle: (a['title'] ?? '').toString(),
         annMessage: (a['message'] ?? '').toString(),

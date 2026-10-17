@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/github_api.dart';
 import 'login_screen.dart';
 import 'content_screen.dart';
+import 'branding_screen.dart';
 
 class PanelScreen extends StatefulWidget {
   const PanelScreen({super.key});
@@ -16,6 +17,7 @@ class _PanelScreenState extends State<PanelScreen> {
   bool _saving = false;
   String? _sha;
   String? _error;
+  Map<String, dynamic>? _fullConfig;
 
   // app name
   final appName = TextEditingController();
@@ -82,6 +84,7 @@ class _PanelScreenState extends State<PanelScreen> {
     final i = c['app_info'] as Map<String, dynamic>? ?? {};
     setState(() {
       _sha = res['sha'] as String;
+      _fullConfig = c;
       appName.text = '${c['app_name'] ?? 'দীন শিক্ষা'}';
       annEnabled = a['enabled'] == true;
       annTitle.text = '${a['title'] ?? ''}';
@@ -119,6 +122,7 @@ class _PanelScreenState extends State<PanelScreen> {
       'app_name': appName.text.trim().isEmpty
           ? 'দীন শিক্ষা'
           : appName.text.trim(),
+      'branding': (_fullConfig?['branding'] as Map<String, dynamic>?) ?? {},
       'announcement': {
         'enabled': annEnabled,
         'title': annTitle.text.trim(),
@@ -173,6 +177,16 @@ class _PanelScreenState extends State<PanelScreen> {
       appBar: AppBar(
         title: const Text('Admin Panel'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.palette),
+            tooltip: 'লোগো ও আইকন',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) =>
+                      const BrandingScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.library_books),
             tooltip: 'কনটেন্ট ম্যানেজ',

@@ -66,6 +66,21 @@
       <input id="appName" placeholder="যেমন: দীন শিক্ষা">
     </div>
     <div class="card">
+      <h2>🎨 লোগো ও ব্র্যান্ডিং</h2>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="showLogo"><span class="slider"></span></label>
+        <span style="font-weight:600">লোগো দেখাও</span>
+      </div>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="animateLogo"><span class="slider"></span></label>
+        <span style="font-weight:600">লোগো অ্যানিমেশন</span>
+      </div>
+      <label>লোগো (emoji)</label>
+      <input id="logoEmoji" placeholder="🕌" style="font-size:28px">
+      <label>ট্যাগলাইন</label>
+      <input id="tagline" placeholder="ইসলামিক জ্ঞানের ভান্ডার">
+    </div>
+    <div class="card">
       <h2>📢 ঘোষণা ব্যানার</h2>
       <div class="row">
         <label class="switch"><input type="checkbox" id="annEnabled"><span class="slider"></span></label>
@@ -122,6 +137,7 @@ const REPO = 'deen-shikkha.github.io';
 const FILE = 'config.json';
 const API = 'https://api.github.com';
 let sha = null;
+let loadedCfg = null;
 
 function show(el, ok, msg) {
   el.className = 'status ' + (ok ? 'ok' : 'err');
@@ -142,6 +158,7 @@ async function login() {
     const d = await r.json();
     sha = d.sha;
     const cfg = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g, '')))));
+    loadedCfg = cfg;
     localStorage.setItem('ds_pat', pat);
     fillForm(cfg);
     document.getElementById('loginCard').classList.add('hidden');
@@ -152,8 +169,12 @@ async function login() {
 }
 
 function fillForm(c) {
-  const a = c.announcement || {}, f = c.featured || {}, i = c.app_info || {};
+  const a = c.announcement || {}, f = c.featured || {}, i = c.app_info || {}, b = c.branding || {};
   document.getElementById('appName').value = c.app_name || 'দীন শিক্ষা';
+  document.getElementById('logoEmoji').value = b.logo || '🕌';
+  document.getElementById('showLogo').checked = b.show_logo !== false;
+  document.getElementById('animateLogo').checked = b.animate_logo !== false;
+  document.getElementById('tagline').value = b.tagline || 'ইসলামিক জ্ঞানের ভান্ডার';
   document.getElementById('annEnabled').checked = !!a.enabled;
   document.getElementById('annTitle').value = a.title || '';
   document.getElementById('annMessage').value = a.message || '';
@@ -187,8 +208,16 @@ async function saveConfig() {
   const pat = getPat();
   const btn = document.getElementById('saveBtn');
   const st = document.getElementById('saveStatus');
+  const oldBranding = (loadedCfg && loadedCfg.branding) || {};
   const cfg = {
     app_name: document.getElementById('appName').value.trim() || 'দীন শিক্ষা',
+    branding: {
+      logo: document.getElementById('logoEmoji').value.trim() || '🕌',
+      show_logo: document.getElementById('showLogo').checked,
+      animate_logo: document.getElementById('animateLogo').checked,
+      tagline: document.getElementById('tagline').value.trim(),
+      menu_icons: oldBranding.menu_icons || {}
+    },
     announcement: {
       enabled: document.getElementById('annEnabled').checked,
       title: document.getElementById('annTitle').value.trim(),
