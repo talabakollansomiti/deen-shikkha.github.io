@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'data/remote_config.dart';
 import 'data/dynamic_content.dart';
 import 'data/quran_loader.dart';
@@ -309,6 +310,7 @@ class HomeScreen extends StatelessWidget {
                             fontSize: 14,
                             color: Colors.white70),
                       ),
+                      const _LiveClock(),
                     ],
                   ),
                 ),
@@ -490,6 +492,102 @@ class _FeaturedCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+// লাইভ ঘড়ি (বাংলা সংখ্যায়)
+class _LiveClock extends StatefulWidget {
+  const _LiveClock();
+
+  @override
+  State<_LiveClock> createState() => _LiveClockState();
+}
+
+class _LiveClockState extends State<_LiveClock> {
+  late String _time;
+  late String _date;
+  Timer? _timer;
+
+  static const _bdDays = [
+    'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার',
+    'শুক্রবার', 'শনিবার', 'রবিবার'
+  ];
+  static const _bdMonths = [
+    'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+    'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+  ];
+
+  String _bn(String s) {
+    const en = '0123456789';
+    const b = '০১২৩৪৫৬৭৮৯';
+    var r = s;
+    for (int i = 0; i < 10; i++) {
+      r = r.replaceAll(en[i], b[i]);
+    }
+    return r;
+  }
+
+  void _update() {
+    final now = DateTime.now();
+    var hour = now.hour;
+    final period = hour < 12 ? 'সকাল' : (hour < 15 ? 'দুপুর' : (hour < 18 ? 'বিকাল' : 'রাত'));
+    var h12 = hour % 12;
+    if (h12 == 0) h12 = 12;
+    setState(() {
+      _time =
+          '$period ${_bn(h12.toString().padLeft(2, '0'))}:${_bn(now.minute.toString().padLeft(2, '0'))}:${_bn(now.second.toString().padLeft(2, '0'))}';
+      _date =
+          '${_bdDays[now.weekday - 1]}, ${_bn(now.day.toString())} ${_bdMonths[now.month - 1]}';
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _time = '';
+    _date = '';
+    _update();
+    _timer = Timer.periodic(
+        const Duration(seconds: 1), (_) => _update());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(
+          horizontal: 18, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          Text(
+            _time,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontFeatures: [FontFeature.tabularFigures()],
+            ),
+          ),
+          Text(
+            _date,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
