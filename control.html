@@ -61,6 +61,11 @@
   <!-- PANEL -->
   <div id="panel" class="hidden">
     <div class="card">
+      <h2>📱 অ্যাপের নাম</h2>
+      <label>হোম স্ক্রিনে দেখানো নাম</label>
+      <input id="appName" placeholder="যেমন: দীন শিক্ষা">
+    </div>
+    <div class="card">
       <h2>📢 ঘোষণা ব্যানার</h2>
       <div class="row">
         <label class="switch"><input type="checkbox" id="annEnabled"><span class="slider"></span></label>
@@ -148,6 +153,7 @@ async function login() {
 
 function fillForm(c) {
   const a = c.announcement || {}, f = c.featured || {}, i = c.app_info || {};
+  document.getElementById('appName').value = c.app_name || 'দীন শিক্ষা';
   document.getElementById('annEnabled').checked = !!a.enabled;
   document.getElementById('annTitle').value = a.title || '';
   document.getElementById('annMessage').value = a.message || '';
@@ -182,6 +188,7 @@ async function saveConfig() {
   const btn = document.getElementById('saveBtn');
   const st = document.getElementById('saveStatus');
   const cfg = {
+    app_name: document.getElementById('appName').value.trim() || 'দীন শিক্ষা',
     announcement: {
       enabled: document.getElementById('annEnabled').checked,
       title: document.getElementById('annTitle').value.trim(),

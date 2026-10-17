@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 // Admin panel (control.html) থেকে remote config পড়া
 class RemoteConfig {
+  final String appName;
   final bool annEnabled;
   final String annTitle;
   final String annMessage;
@@ -16,6 +17,7 @@ class RemoteConfig {
   final String latestVersion;
 
   const RemoteConfig({
+    this.appName = 'দীন শিক্ষা',
     this.annEnabled = false,
     this.annTitle = '',
     this.annMessage = '',
@@ -43,6 +45,7 @@ class RemoteConfig {
       final f = d['featured'] as Map<String, dynamic>? ?? {};
       final i = d['app_info'] as Map<String, dynamic>? ?? {};
       return RemoteConfig(
+        appName: (d['app_name'] ?? 'দীন শিক্ষা').toString(),
         annEnabled: a['enabled'] == true,
         annTitle: (a['title'] ?? '').toString(),
         annMessage: (a['message'] ?? '').toString(),

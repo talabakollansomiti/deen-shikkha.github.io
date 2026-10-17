@@ -277,21 +277,22 @@ class HomeScreen extends StatelessWidget {
                     colors: [Color(0xFF0E6B3E), Color(0xFF0A4D2D)],
                   ),
                 ),
-                child: const SafeArea(
+                child: SafeArea(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('🕌', style: TextStyle(fontSize: 48)),
-                      SizedBox(height: 6),
+                      const Text('🕌',
+                          style: TextStyle(fontSize: 48)),
+                      const SizedBox(height: 6),
                       Text(
-                        'দীন শিক্ষা',
-                        style: TextStyle(
+                        config.appName,
+                        style: const TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      Text(
+                      const Text(
                         'ইসলামিক জ্ঞানের ভান্ডার',
                         style:
                             TextStyle(fontSize: 14, color: Colors.white70),

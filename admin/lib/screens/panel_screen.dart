@@ -17,6 +17,9 @@ class _PanelScreenState extends State<PanelScreen> {
   String? _sha;
   String? _error;
 
+  // app name
+  final appName = TextEditingController();
+
   // announcement
   bool annEnabled = false;
   final annTitle = TextEditingController();
@@ -42,6 +45,7 @@ class _PanelScreenState extends State<PanelScreen> {
 
   @override
   void dispose() {
+    appName.dispose();
     annTitle.dispose();
     annMessage.dispose();
     featTitle.dispose();
@@ -78,6 +82,7 @@ class _PanelScreenState extends State<PanelScreen> {
     final i = c['app_info'] as Map<String, dynamic>? ?? {};
     setState(() {
       _sha = res['sha'] as String;
+      appName.text = '${c['app_name'] ?? 'দীন শিক্ষা'}';
       annEnabled = a['enabled'] == true;
       annTitle.text = '${a['title'] ?? ''}';
       annMessage.text = '${a['message'] ?? ''}';
@@ -111,6 +116,9 @@ class _PanelScreenState extends State<PanelScreen> {
     if (pat == null || _sha == null) return;
     setState(() => _saving = true);
     final config = {
+      'app_name': appName.text.trim().isEmpty
+          ? 'দীন শিক্ষা'
+          : appName.text.trim(),
       'announcement': {
         'enabled': annEnabled,
         'title': annTitle.text.trim(),
@@ -204,6 +212,14 @@ class _PanelScreenState extends State<PanelScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    _sectionCard(
+                      '📱 অ্যাপের নাম',
+                      const SizedBox.shrink(),
+                      [
+                        _label('হোম স্ক্রিনে দেখানো নাম'),
+                        _field(appName, 'যেমন: দীন শিক্ষা'),
+                      ],
+                    ),
                     _sectionCard(
                       '📢 ঘোষণা ব্যানার',
                       _switchRow('ব্যানার চালু', annEnabled,
