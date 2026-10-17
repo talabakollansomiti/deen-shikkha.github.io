@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/dynamic_content.dart';
+import '../data/animations.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -159,7 +160,7 @@ class _QuizScreenState extends State<QuizScreen> {
     } else {
       msg = 'হাল ছাড়বেন না, আবার চেষ্টা করুন 💪';
     }
-    return Center(
+    final resultContent = Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -192,5 +193,10 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
       ),
     );
+    // ৮০%+ স্কোরে confetti 🎉
+    if (pct >= 80) {
+      return ConfettiOverlay(child: resultContent);
+    }
+    return resultContent;
   }
 }

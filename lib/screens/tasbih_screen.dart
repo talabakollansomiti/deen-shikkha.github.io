@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../data/animations.dart';
 
 class TasbihScreen extends StatefulWidget {
   const TasbihScreen({super.key});
@@ -8,11 +9,14 @@ class TasbihScreen extends StatefulWidget {
   State<TasbihScreen> createState() => _TasbihScreenState();
 }
 
-class _TasbihScreenState extends State<TasbihScreen> {
+class _TasbihScreenState extends State<TasbihScreen>
+    with SingleTickerProviderStateMixin {
   int _count = 0;
   int _target = 100;
   int _total = 0;
   String _dhikr = 'সুবহানাল্লাহ';
+  late AnimationController _bounceCtrl;
+  late Animation<double> _bounce;
 
   final List<String> _adhkar = [
     'সুবহানাল্লাহ',
@@ -27,7 +31,21 @@ class _TasbihScreenState extends State<TasbihScreen> {
   @override
   void initState() {
     super.initState();
+    _bounceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _bounce = Tween<double>(begin: 1.0, end: 1.12).animate(
+      CurvedAnimation(
+          parent: _bounceCtrl, curve: Curves.easeOut),
+    );
     _loadTotal();
+  }
+
+  @override
+  void dispose() {
+    _bounceCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTotal() async {
@@ -41,6 +59,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
   }
 
   void _tap() {
+    _bounceCtrl.forward().then((_) => _bounceCtrl.reverse());
     setState(() {
       _count++;
       _total++;
@@ -131,12 +150,15 @@ class _TasbihScreenState extends State<TasbihScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '$_count',
-                        style: const TextStyle(
-                            fontSize: 84,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
+                      ScaleTransition(
+                        scale: _bounce,
+                        child: Text(
+                          '$_count',
+                          style: const TextStyle(
+                              fontSize: 84,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
                       ),
                       Text(
                         '/ $_target',

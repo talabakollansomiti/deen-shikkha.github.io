@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'data/remote_config.dart';
+import 'data/animations.dart';
 import 'data/dynamic_content.dart';
 import 'data/quran_loader.dart';
 import 'data/theme_service.dart';
@@ -96,11 +97,34 @@ class _BootScreen extends StatefulWidget {
   State<_BootScreen> createState() => _BootScreenState();
 }
 
-class _BootScreenState extends State<_BootScreen> {
+class _BootScreenState extends State<_BootScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<double> _scale;
+
   @override
   void initState() {
     super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fade = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOut),
+    );
+    _scale = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _ctrl, curve: Curves.easeOutBack),
+    );
+    _ctrl.forward();
     _boot();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
   }
 
   Future<void> _boot() async {
@@ -109,32 +133,41 @@ class _BootScreenState extends State<_BootScreen> {
       DynamicContent.fetch().then((_) => null),
     ]);
     if (!mounted) return;
+    await Future.delayed(
+        const Duration(milliseconds: 600));
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-          builder: (_) =>
-              HomeScreen(config: results[0] as RemoteConfig)),
+      FuturisticPageRoute(
+          page: HomeScreen(
+              config: results[0] as RemoteConfig)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF0E6B3E),
+    return Scaffold(
+      backgroundColor: const Color(0xFF0E6B3E),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('🕌', style: TextStyle(fontSize: 72)),
-            SizedBox(height: 16),
-            Text('দীন শিক্ষা',
-                style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            SizedBox(height: 24),
-            CircularProgressIndicator(color: Colors.white),
-          ],
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('🕌', style: TextStyle(fontSize: 72)),
+                SizedBox(height: 16),
+                Text('দীন শিক্ষা',
+                    style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+                SizedBox(height: 24),
+                CircularProgressIndicator(color: Colors.white),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -278,14 +311,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF0E6B3E), Color(0xFF0A4D2D)],
-                  ),
-                ),
+              background: _AnimatedHeader(
                 child: SafeArea(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -394,8 +420,11 @@ class HomeScreen extends StatelessWidget {
                     final emoji =
                         config.menuIcons[item.key] ??
                             item.emoji;
-                    return _MenuCard(
-                        item: item, iconEmoji: emoji);
+                    return StaggeredEntrance(
+                      index: i,
+                      child: _MenuCard(
+                          item: item, iconEmoji: emoji),
+                    );
                   },
                   childCount: cat.items.length,
                 ),
@@ -437,13 +466,11 @@ class _FeaturedCard extends StatelessWidget {
           margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
           child: Card(
             color: const Color(0xFF0E6B3E),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+            child: BounceTap(
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                        SurahReaderScreen(surah: s)),
+                FuturisticPageRoute(
+                    page: SurahReaderScreen(surah: s)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(18),
@@ -592,6 +619,62 @@ class _LiveClockState extends State<_LiveClock> {
   }
 }
 
+// অ্যানিমেটেড গ্র্যাডিয়েন্ট হেডার (ফিউচারিস্টিক)
+class _AnimatedHeader extends StatefulWidget {
+  final Widget child;
+  const _AnimatedHeader({required this.child});
+
+  @override
+  State<_AnimatedHeader> createState() =>
+      _AnimatedHeaderState();
+}
+
+class _AnimatedHeaderState
+    extends State<_AnimatedHeader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (_, __) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment(
+                  -1 + _ctrl.value * 0.6, -1),
+              end: Alignment(
+                  1 - _ctrl.value * 0.6, 1),
+              colors: const [
+                Color(0xFF0E6B3E),
+                Color(0xFF149A5B),
+                Color(0xFF0A4D2D),
+              ],
+            ),
+          ),
+          child: widget.child,
+        );
+      },
+    );
+  }
+}
+
 // অ্যানিমেটেড লোগো (pulse)
 class _AnimatedLogo extends StatefulWidget {
   final String logo;
@@ -648,13 +731,12 @@ class _MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => item.screen),
-        ),
+    return BounceTap(
+      onTap: () => Navigator.push(
+        context,
+        FuturisticPageRoute(page: item.screen),
+      ),
+      child: Card(
         child: Padding(
           padding: const EdgeInsets.symmetric(
               vertical: 12, horizontal: 6),
