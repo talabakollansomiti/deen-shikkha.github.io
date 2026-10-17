@@ -209,7 +209,7 @@ class HomeScreen extends StatelessWidget {
         _Category('🧮 হিসাব', '', [
           _MenuItem('যাকাত', Icons.calculate,
               const Color(0xFFEF6C00), const ZakatScreen()),
-          _MenuItem('ফিতরা', Icons.savings,
+          _MenuItem('ফিতরা', Icons.payments,
               const Color(0xFFF9A825), const FitraScreen()),
           _MenuItem('সদকা ট্র্যাকার', Icons.volunteer_activism,
               const Color(0xFFAD1457), const SadaqahScreen()),
