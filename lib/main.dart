@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'data/remote_config.dart';
+import 'data/quran_loader.dart';
 import 'screens/quran_screen.dart';
 import 'screens/hadith_screen.dart';
 import 'screens/dua_screen.dart';
@@ -36,18 +38,106 @@ class DeenShikkhaApp extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
-      home: const HomeScreen(),
+      home: const _BootScreen(),
+    );
+  }
+}
+
+// Remote config লোড হওয়া পর্যন্ত splash
+class _BootScreen extends StatefulWidget {
+  const _BootScreen();
+
+  @override
+  State<_BootScreen> createState() => _BootScreenState();
+}
+
+class _BootScreenState extends State<_BootScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _boot();
+  }
+
+  Future<void> _boot() async {
+    final cfg = await RemoteConfig.fetch();
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen(config: cfg)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF0E6B3E),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('🕌', style: TextStyle(fontSize: 72)),
+            SizedBox(height: 16),
+            Text('দীন শিক্ষা',
+                style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
+            SizedBox(height: 24),
+            CircularProgressIndicator(color: Colors.white),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final RemoteConfig config;
+  const HomeScreen({super.key, required this.config});
+
+  Color _parseColor(String hex) {
+    try {
+      var h = hex.replaceAll('#', '');
+      if (h.length == 6) h = 'FF$h';
+      return Color(int.parse(h, radix: 16));
+    } catch (_) {
+      return const Color(0xFF0E6B3E);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // মেইনটেন্যান্স মোড
+    if (config.maintMode) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('🔧', style: TextStyle(fontSize: 64)),
+                const SizedBox(height: 16),
+                const Text('মেইনটেন্যান্স চলছে',
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(
+                  config.maintMsg.isNotEmpty
+                      ? config.maintMsg
+                      : 'শীঘ্রই ফিরে আসছি ইনশাআল্লাহ।',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final items = [
-      _MenuItem('পবিত্র কুরআন', 'নির্বাচিত সূরা — আরবি, উচ্চারণ ও অর্থসহ', Icons.menu_book, const Color(0xFF0E6B3E), const QuranScreen()),
+      _MenuItem('পবিত্র কুরআন', 'সম্পূর্ণ কুরআন — আরবি ও বাংলা অর্থসহ', Icons.menu_book, const Color(0xFF0E6B3E), const QuranScreen()),
       _MenuItem('হাদিস', 'সহীহ হাদিস সংকলন', Icons.format_quote, const Color(0xFF8A6D1B), const HadithScreen()),
       _MenuItem('নামাজ শিক্ষা', 'ওয়াক্ত, ওযু ও নামাজের নিয়ম', Icons.access_time, const Color(0xFF1B6FA8), const NamazScreen()),
       _MenuItem('দোয়া ও যিকির', 'দৈনন্দিন দোয়া ও ফজিলত', Icons.favorite, const Color(0xFFB23A48), const DuaScreen()),
@@ -96,6 +186,53 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          // ঘোষণা ব্যানার (admin থেকে)
+          if (config.annEnabled &&
+              (config.annTitle.isNotEmpty || config.annMessage.isNotEmpty))
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _parseColor(config.annColor),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.campaign,
+                            color: Colors.white, size: 22),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            config.annTitle,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (config.annMessage.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        config.annMessage,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 14, height: 1.6),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          // ফিচার্ড সূরা (admin থেকে)
+          if (config.featEnabled)
+            SliverToBoxAdapter(
+              child: _FeaturedCard(config: config),
+            ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverGrid(
@@ -123,6 +260,79 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FeaturedCard extends StatelessWidget {
+  final RemoteConfig config;
+  const _FeaturedCard({required this.config});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<QuranSurah>>(
+      future: QuranLoader.load(),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final surahs = snap.data!;
+        final s = surahs.firstWhere(
+          (e) => e.id == config.featSurahId,
+          orElse: () => surahs[0],
+        );
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          child: Card(
+            color: const Color(0xFF0E6B3E),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => SurahReaderScreen(surah: s)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    const Text('⭐', style: TextStyle(fontSize: 36)),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            config.featTitle.isNotEmpty
+                                ? config.featTitle
+                                : 'ফিচার্ড সূরা',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 13),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'সূরা ${s.bnName}',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18),
+                          ),
+                          if (config.featDesc.isNotEmpty)
+                            Text(
+                              config.featDesc,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 13),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios,
+                        color: Colors.white70, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

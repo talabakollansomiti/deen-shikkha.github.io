@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>দীন শিক্ষা — Admin Panel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f2ec; color: #222; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #0E6B3E, #0A4D2D); color: #fff; padding: 28px 20px; text-align: center; }
+  .header h1 { font-size: 26px; margin-bottom: 4px; }
+  .header p { opacity: .75; font-size: 14px; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 20px 16px 60px; }
+  .card { background: #fff; border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .card h2 { font-size: 17px; margin-bottom: 14px; color: #0E6B3E; display: flex; align-items: center; gap: 8px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; color: #444; }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; padding: 11px 13px; border: 1.5px solid #ddd; border-radius: 10px; font-size: 15px; font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #0E6B3E; }
+  textarea { min-height: 80px; resize: vertical; }
+  .row { display: flex; gap: 12px; align-items: center; }
+  .switch { position: relative; width: 52px; height: 30px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #ccc; border-radius: 30px; transition: .2s; cursor: pointer; }
+  .slider:before { content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + .slider { background: #0E6B3E; }
+  .switch input:checked + .slider:before { transform: translateX(22px); }
+  .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  .btn-green { background: #0E6B3E; color: #fff; }
+  .btn-green:disabled { background: #9db8a9; cursor: wait; }
+  .btn-red { background: #fff; color: #B23A48; border: 1.5px solid #B23A48; }
+  .status { text-align: center; padding: 12px; border-radius: 10px; margin-top: 12px; font-size: 14px; display: none; }
+  .status.ok { display: block; background: #e6f4ea; color: #0E6B3E; }
+  .status.err { display: block; background: #fdecea; color: #B23A48; }
+  .hint { font-size: 12.5px; color: #777; margin-top: 6px; line-height: 1.6; }
+  .login-card { text-align: center; }
+  .hidden { display: none !important; }
+  .preview { background: #f7f5ef; border: 1.5px dashed #0E6B3E; border-radius: 10px; padding: 14px; margin-top: 10px; }
+  .preview .pt { font-weight: 700; margin-bottom: 4px; }
+  input[type=color] { width: 60px; height: 40px; border: 1.5px solid #ddd; border-radius: 8px; padding: 2px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🕌 দীন শিক্ষা</h1>
+  <p>Admin Control Panel</p>
+</div>
+<div class="wrap">
+
+  <!-- LOGIN -->
+  <div class="card login-card" id="loginCard">
+    <h2 style="justify-content:center">🔑 Admin Login</h2>
+    <label style="text-align:left">GitHub Personal Access Token</label>
+    <input type="password" id="patInput" placeholder="github_pat_...">
+    <p class="hint" style="text-align:left">Token শুধু তোমার এই ব্রাউজারে সেভ থাকবে। কারো সাথে শেয়ার করো না।</p>
+    <button class="btn btn-green" onclick="login()">প্রবেশ করো</button>
+    <div class="status" id="loginStatus"></div>
+  </div>
+
+  <!-- PANEL -->
+  <div id="panel" class="hidden">
+    <div class="card">
+      <h2>📢 ঘোষণা ব্যানার</h2>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="annEnabled"><span class="slider"></span></label>
+        <span style="font-weight:600">ব্যানার চালু</span>
+      </div>
+      <label>শিরোনাম</label>
+      <input type="text" id="annTitle" placeholder="যেমন: পবিত্র রমজান মোবারক">
+      <label>বার্তা</label>
+      <textarea id="annMessage" placeholder="ঘোষণার বিস্তারিত লেখো..."></textarea>
+      <label>রঙ</label>
+      <input type="color" id="annColor" value="#0E6B3E">
+      <div class="preview" id="annPreview" style="display:none">
+        <div class="pt" id="pvTitle"></div>
+        <div id="pvMsg" style="font-size:14px"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>⭐ ফিচার্ড সূরা</h2>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="featEnabled"><span class="slider"></span></label>
+        <span style="font-weight:600">হোমে ফিচার্ড কার্ড দেখাও</span>
+      </div>
+      <label>শিরোনাম</label>
+      <input type="text" id="featTitle" placeholder="যেমন: আজকের সূরা">
+      <label>সূরা নম্বর (১-১১৪)</label>
+      <input type="text" id="featSurah" inputmode="numeric" placeholder="যেমন: 36">
+      <label>বর্ণনা</label>
+      <input type="text" id="featDesc" placeholder="ছোট বর্ণনা">
+    </div>
+
+    <div class="card">
+      <h2>🔧 অ্যাপ সেটিংস</h2>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="maintMode"><span class="slider"></span></label>
+        <span style="font-weight:600">মেইনটেন্যান্স মোড</span>
+      </div>
+      <label>মেইনটেন্যান্স বার্তা</label>
+      <input type="text" id="maintMsg" placeholder="যেমন: অ্যাপ আপডেট চলছে...">
+      <label>সর্বশেষ ভার্সন</label>
+      <input type="text" id="latestVer" placeholder="1.0.0">
+    </div>
+
+    <button class="btn btn-green" id="saveBtn" onclick="saveConfig()">💾 সেভ করো</button>
+    <div class="status" id="saveStatus"></div>
+    <button class="btn btn-red" onclick="logout()" style="margin-top:12px">লগআউট</button>
+    <p class="hint" style="text-align:center;margin-top:14px">সেভ করার ১-২ মিনিট পর user app-এ পরিবর্তন দেখা যাবে (ইন্টারনেট লাগবে)।</p>
+  </div>
+</div>
+
+<script>
+const OWNER = 'talabakollansomiti';
+const REPO = 'deen-shikkha.github.io';
+const FILE = 'config.json';
+const API = 'https://api.github.com';
+let sha = null;
+
+function show(el, ok, msg) {
+  el.className = 'status ' + (ok ? 'ok' : 'err');
+  el.textContent = msg;
+}
+function getPat() { return localStorage.getItem('ds_pat') || ''; }
+
+async function login() {
+  const pat = document.getElementById('patInput').value.trim();
+  const st = document.getElementById('loginStatus');
+  if (!pat) { show(st, false, 'Token দাও'); return; }
+  st.className = 'status'; st.textContent = 'যাচাই হচ্ছে...'; st.style.display = 'block';
+  try {
+    const r = await fetch(`${API}/repos/${OWNER}/${REPO}/contents/${FILE}`, {
+      headers: { 'Authorization': 'Bearer ' + pat, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!r.ok) throw new Error('Token কাজ করছে না');
+    const d = await r.json();
+    sha = d.sha;
+    const cfg = JSON.parse(decodeURIComponent(escape(atob(d.content.replace(/\n/g, '')))));
+    localStorage.setItem('ds_pat', pat);
+    fillForm(cfg);
+    document.getElementById('loginCard').classList.add('hidden');
+    document.getElementById('panel').classList.remove('hidden');
+  } catch (e) {
+    show(st, false, 'ভুল token: ' + e.message);
+  }
+}
+
+function fillForm(c) {
+  const a = c.announcement || {}, f = c.featured || {}, i = c.app_info || {};
+  document.getElementById('annEnabled').checked = !!a.enabled;
+  document.getElementById('annTitle').value = a.title || '';
+  document.getElementById('annMessage').value = a.message || '';
+  document.getElementById('annColor').value = a.color || '#0E6B3E';
+  document.getElementById('featEnabled').checked = !!f.enabled;
+  document.getElementById('featTitle').value = f.title || '';
+  document.getElementById('featSurah').value = f.surah_id || '';
+  document.getElementById('featDesc').value = f.description || '';
+  document.getElementById('maintMode').checked = !!i.maintenance_mode;
+  document.getElementById('maintMsg').value = i.maintenance_message || '';
+  document.getElementById('latestVer').value = i.latest_version || '';
+  updatePreview();
+}
+
+function updatePreview() {
+  const on = document.getElementById('annEnabled').checked;
+  const t = document.getElementById('annTitle').value;
+  const m = document.getElementById('annMessage').value;
+  const pv = document.getElementById('annPreview');
+  if (on && (t || m)) {
+    pv.style.display = 'block';
+    pv.style.borderColor = document.getElementById('annColor').value;
+    document.getElementById('pvTitle').textContent = t;
+    document.getElementById('pvMsg').textContent = m;
+  } else pv.style.display = 'none';
+}
+['annEnabled','annTitle','annMessage','annColor'].forEach(id =>
+  document.addEventListener('input', e => { if (e.target.id === id) updatePreview(); }));
+
+async function saveConfig() {
+  const pat = getPat();
+  const btn = document.getElementById('saveBtn');
+  const st = document.getElementById('saveStatus');
+  const cfg = {
+    announcement: {
+      enabled: document.getElementById('annEnabled').checked,
+      title: document.getElementById('annTitle').value.trim(),
+      message: document.getElementById('annMessage').value.trim(),
+      color: document.getElementById('annColor').value
+    },
+    featured: {
+      enabled: document.getElementById('featEnabled').checked,
+      title: document.getElementById('featTitle').value.trim(),
+      surah_id: parseInt(document.getElementById('featSurah').value) || 1,
+      description: document.getElementById('featDesc').value.trim()
+    },
+    app_info: {
+      maintenance_mode: document.getElementById('maintMode').checked,
+      maintenance_message: document.getElementById('maintMsg').value.trim(),
+      latest_version: document.getElementById('latestVer').value.trim() || '1.0.0',
+      update_url: ''
+    }
+  };
+  btn.disabled = true; btn.textContent = 'সেভ হচ্ছে...';
+  try {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2))));
+    const r = await fetch(`${API}/repos/${OWNER}/${REPO}/contents/${FILE}`, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + pat, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Admin panel update', content, sha })
+    });
+    if (!r.ok) throw new Error('সেভ হয়নি (HTTP ' + r.status + ')');
+    sha = (await r.json()).content.sha;
+    show(st, true, '✅ সেভ হয়েছে! ১-২ মিনিট পর app-এ দেখা যাবে।');
+  } catch (e) {
+    show(st, false, '❌ ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = '💾 সেভ করো';
+}
+
+function logout() {
+  localStorage.removeItem('ds_pat');
+  location.reload();
+}
+
+// auto-login if token saved
+window.addEventListener('DOMContentLoaded', () => {
+  if (getPat()) {
+    document.getElementById('patInput').value = getPat();
+    login();
+  }
+});
+</script>
+</body>
+</html>
