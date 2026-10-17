@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/quran_loader.dart';
 import '../data/bookmark_service.dart';
+import '../data/audio_service.dart';
 
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
@@ -190,12 +191,29 @@ class SurahReaderScreen extends StatefulWidget {
 
 class _SurahReaderScreenState extends State<SurahReaderScreen> {
   Set<String> _bookmarks = {};
+  int? _playingAyah;
+  bool _playingAll = false;
 
   @override
   void initState() {
     super.initState();
     BookmarkService.getBookmarks()
         .then((b) => setState(() => _bookmarks = b));
+    AudioService().onAyahChanged = (idx) {
+      if (mounted) {
+        setState(() {
+          _playingAyah = idx;
+          _playingAll =
+              idx != null && AudioService().isPlayingAll;
+        });
+      }
+    };
+  }
+
+  @override
+  void dispose() {
+    AudioService().onAyahChanged = null;
+    super.dispose();
   }
 
   Future<void> _toggleBookmark(int idx) async {
@@ -205,13 +223,42 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
     setState(() => _bookmarks = b);
   }
 
+  Future<void> _togglePlayAll() async {
+    final svc = AudioService();
+    if (_playingAll) {
+      await svc.stop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              '🎧 তিলাওয়াত চলছে — মিশারী রাশিদ আল-আফাসী (ইন্টারনেট লাগবে)'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      await svc.playAll(
+          widget.surah.id, widget.surah.verses.length);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final surah = widget.surah;
     final showBismillah = surah.id != 1 && surah.id != 9;
 
     return Scaffold(
-      appBar: AppBar(title: Text(surah.bnName)),
+      appBar: AppBar(
+        title: Text(surah.bnName),
+        actions: [
+          IconButton(
+            icon: Icon(
+                _playingAll ? Icons.stop : Icons.play_arrow),
+            tooltip: _playingAll
+                ? 'বন্ধ করো'
+                : 'পুরো সূরা শোনো',
+            onPressed: _togglePlayAll,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(14),
         children: [
@@ -260,8 +307,12 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
             final v = surah.verses[i];
             final marked =
                 _bookmarks.contains('${surah.id}_$i');
+            final playing = _playingAyah == i;
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
+              color: playing
+                  ? const Color(0xFF0E6B3E).withOpacity(0.08)
+                  : null,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -291,6 +342,21 @@ class _SurahReaderScreenState extends State<SurahReaderScreen> {
                           ),
                         ),
                         const Spacer(),
+                        IconButton(
+                          icon: Icon(
+                            playing
+                                ? Icons.stop_circle
+                                : Icons.play_circle,
+                            color: playing
+                                ? const Color(0xFF0E6B3E)
+                                : Colors.grey.shade600,
+                            size: 28,
+                          ),
+                          tooltip: 'তিলাওয়াত শোনো',
+                          onPressed: () => AudioService()
+                              .toggleAyah(surah.id, i,
+                                  surah.verses.length),
+                        ),
                         IconButton(
                           icon: Icon(
                             marked
