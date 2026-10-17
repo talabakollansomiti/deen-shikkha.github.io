@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/quiz_data.dart';
+import '../data/dynamic_content.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -18,7 +18,8 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
-    _questions = List.of(quizQuestions)..shuffle();
+    final all = DynamicContent.allQuiz;
+    _questions = List.of(all)..shuffle();
     _questions = _questions.take(10).toList();
   }
 
@@ -43,7 +44,8 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _restart() {
     setState(() {
-      _questions = List.of(quizQuestions)..shuffle();
+      final all = DynamicContent.allQuiz;
+      _questions = List.of(all)..shuffle();
       _questions = _questions.take(10).toList();
       _index = 0;
       _score = 0;

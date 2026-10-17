@@ -1,14 +1,30 @@
 import 'package:flutter/material.dart';
 import 'data/remote_config.dart';
+import 'data/dynamic_content.dart';
 import 'data/quran_loader.dart';
+import 'data/theme_service.dart';
 import 'screens/quran_screen.dart';
+import 'screens/quran_search_screen.dart';
 import 'screens/hadith_screen.dart';
 import 'screens/dua_screen.dart';
 import 'screens/namaz_screen.dart';
+import 'screens/namaz_times_screen.dart';
+import 'screens/namaz_tracker_screen.dart';
+import 'screens/tasbih_screen.dart';
+import 'screens/ramadan_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/seerah_screen.dart';
+import 'screens/prophets_screen.dart';
+import 'screens/hajj_screen.dart';
+import 'screens/names99_screen.dart';
+import 'screens/zakat_screen.dart';
+import 'screens/fitra_screen.dart';
+import 'screens/sadaqah_screen.dart';
+import 'screens/hijri_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ThemeService.init();
   runApp(const DeenShikkhaApp());
 }
 
@@ -17,33 +33,61 @@ class DeenShikkhaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'দীন শিক্ষা',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0E6B3E),
-          primary: const Color(0xFF0E6B3E),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF7F5EF),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0E6B3E),
-          foregroundColor: Colors.white,
-          centerTitle: true,
-          elevation: 0,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        ),
-      ),
-      home: const _BootScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeService.mode,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'দীন শিক্ষা',
+          debugShowCheckedModeBanner: false,
+          themeMode: mode,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0E6B3E),
+              primary: const Color(0xFF0E6B3E),
+            ),
+            scaffoldBackgroundColor: const Color(0xFFF7F5EF),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF0E6B3E),
+              foregroundColor: Colors.white,
+              centerTitle: true,
+              elevation: 0,
+            ),
+            cardTheme: CardThemeData(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0E6B3E),
+              primary: const Color(0xFF4CAF7D),
+              brightness: Brightness.dark,
+            ),
+            scaffoldBackgroundColor: const Color(0xFF121212),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF0A4D2D),
+              foregroundColor: Colors.white,
+              centerTitle: true,
+              elevation: 0,
+            ),
+            cardTheme: CardThemeData(
+              elevation: 2,
+              color: const Color(0xFF1E1E1E),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          home: const _BootScreen(),
+        );
+      },
     );
   }
 }
 
-// Remote config লোড হওয়া পর্যন্ত splash
 class _BootScreen extends StatefulWidget {
   const _BootScreen();
 
@@ -59,11 +103,16 @@ class _BootScreenState extends State<_BootScreen> {
   }
 
   Future<void> _boot() async {
-    final cfg = await RemoteConfig.fetch();
+    final results = await Future.wait([
+      RemoteConfig.fetch(),
+      DynamicContent.fetch().then((_) => null),
+    ]);
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => HomeScreen(config: cfg)),
+      MaterialPageRoute(
+          builder: (_) =>
+              HomeScreen(config: results[0] as RemoteConfig)),
     );
   }
 
@@ -91,6 +140,21 @@ class _BootScreenState extends State<_BootScreen> {
   }
 }
 
+class _MenuItem {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final Widget screen;
+  const _MenuItem(this.title, this.icon, this.color, this.screen);
+}
+
+class _Category {
+  final String title;
+  final String emoji;
+  final List<_MenuItem> items;
+  const _Category(this.title, this.emoji, this.items);
+}
+
 class HomeScreen extends StatelessWidget {
   final RemoteConfig config;
   const HomeScreen({super.key, required this.config});
@@ -105,9 +169,59 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
+  List<_Category> _categories() => [
+        _Category('📖 কুরআন ও হাদিস', '', [
+          _MenuItem('পবিত্র কুরআন', Icons.menu_book,
+              const Color(0xFF0E6B3E), const QuranScreen()),
+          _MenuItem('কুরআন সার্চ', Icons.search,
+              const Color(0xFF2E7D5B), const QuranSearchScreen()),
+          _MenuItem('হাদিস', Icons.format_quote,
+              const Color(0xFF8A6D1B), const HadithScreen()),
+          _MenuItem('৯৯ নাম', Icons.star,
+              const Color(0xFFB8860B), const Names99Screen()),
+        ]),
+        _Category('🕌 ইবাদত', '', [
+          _MenuItem('নামাজ শিক্ষা', Icons.school,
+              const Color(0xFF1B6FA8), const NamazScreen()),
+          _MenuItem('নামাজের সময়', Icons.access_time,
+              const Color(0xFF1565C0), const NamazTimesScreen()),
+          _MenuItem('নামাজ ট্র্যাকার', Icons.checklist,
+              const Color(0xFF2E7D32), const NamazTrackerScreen()),
+          _MenuItem('তাসবীহ', Icons.fingerprint,
+              const Color(0xFF6A1B9A), const TasbihScreen()),
+          _MenuItem('রমজান প্ল্যানার', Icons.nightlight,
+              const Color(0xFF1B2A4A), const RamadanScreen()),
+        ]),
+        _Category('🤲 দোয়া ও যিকির', '', [
+          _MenuItem('দোয়া ও যিকির', Icons.favorite,
+              const Color(0xFFB23A48), const DuaScreen()),
+        ]),
+        _Category('📚 জ্ঞান', '', [
+          _MenuItem('ইসলামিক কুইজ', Icons.quiz,
+              const Color(0xFF6A4FB3), const QuizScreen()),
+          _MenuItem('সীরাত', Icons.history,
+              const Color(0xFF3E7C4F), const SeerahScreen()),
+          _MenuItem('নবীদের কাহিনী', Icons.auto_stories,
+              const Color(0xFF5D4037), const ProphetsScreen()),
+          _MenuItem('হজ্জ-উমরাহ', Icons.flight,
+              const Color(0xFF00695C), const HajjScreen()),
+        ]),
+        _Category('🧮 হিসাব', '', [
+          _MenuItem('যাকাত', Icons.calculate,
+              const Color(0xFFEF6C00), const ZakatScreen()),
+          _MenuItem('ফিতরা', Icons.savings,
+              const Color(0xFFF9A825), const FitraScreen()),
+          _MenuItem('সদকা ট্র্যাকার', Icons.volunteer_activism,
+              const Color(0xFFAD1457), const SadaqahScreen()),
+        ]),
+        _Category('📅 অন্যান্য', '', [
+          _MenuItem('হিজরি ক্যালেন্ডার', Icons.calendar_month,
+              const Color(0xFF4E342E), const HijriScreen()),
+        ]),
+      ];
+
   @override
   Widget build(BuildContext context) {
-    // মেইনটেন্যান্স মোড
     if (config.maintMode) {
       return Scaffold(
         body: Center(
@@ -127,7 +241,6 @@ class HomeScreen extends StatelessWidget {
                       ? config.maintMsg
                       : 'শীঘ্রই ফিরে আসছি ইনশাআল্লাহ।',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black54),
                 ),
               ],
             ),
@@ -136,22 +249,25 @@ class HomeScreen extends StatelessWidget {
       );
     }
 
-    final items = [
-      _MenuItem('পবিত্র কুরআন', 'সম্পূর্ণ কুরআন — আরবি ও বাংলা অর্থসহ', Icons.menu_book, const Color(0xFF0E6B3E), const QuranScreen()),
-      _MenuItem('হাদিস', 'সহীহ হাদিস সংকলন', Icons.format_quote, const Color(0xFF8A6D1B), const HadithScreen()),
-      _MenuItem('নামাজ শিক্ষা', 'ওয়াক্ত, ওযু ও নামাজের নিয়ম', Icons.access_time, const Color(0xFF1B6FA8), const NamazScreen()),
-      _MenuItem('দোয়া ও যিকির', 'দৈনন্দিন দোয়া ও ফজিলত', Icons.favorite, const Color(0xFFB23A48), const DuaScreen()),
-      _MenuItem('ইসলামিক কুইজ', 'জ্ঞান যাচাই করুন', Icons.quiz, const Color(0xFF6A4FB3), const QuizScreen()),
-      _MenuItem('সীরাত', 'রাসূল (সা.)-এর জীবনী', Icons.history, const Color(0xFF3E7C4F), const SeerahScreen()),
-    ];
+    final cats = _categories();
+    final isDark = ThemeService.mode.value == ThemeMode.dark;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 200,
             pinned: true,
             backgroundColor: const Color(0xFF0E6B3E),
+            actions: [
+              IconButton(
+                icon: Icon(isDark
+                    ? Icons.light_mode
+                    : Icons.dark_mode),
+                tooltip: isDark ? 'লাইট মোড' : 'ডার্ক মোড',
+                onPressed: () => ThemeService.toggle(),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -165,20 +281,20 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('🕌', style: TextStyle(fontSize: 56)),
-                      SizedBox(height: 8),
+                      Text('🕌', style: TextStyle(fontSize: 48)),
+                      SizedBox(height: 6),
                       Text(
                         'দীন শিক্ষা',
                         style: TextStyle(
-                          fontSize: 34,
+                          fontSize: 30,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 4),
                       Text(
                         'ইসলামিক জ্ঞানের ভান্ডার',
-                        style: TextStyle(fontSize: 15, color: Colors.white70),
+                        style:
+                            TextStyle(fontSize: 14, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -186,9 +302,9 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // ঘোষণা ব্যানার (admin থেকে)
           if (config.annEnabled &&
-              (config.annTitle.isNotEmpty || config.annMessage.isNotEmpty))
+              (config.annTitle.isNotEmpty ||
+                  config.annMessage.isNotEmpty))
             SliverToBoxAdapter(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -221,40 +337,57 @@ class HomeScreen extends StatelessWidget {
                       Text(
                         config.annMessage,
                         style: const TextStyle(
-                            color: Colors.white, fontSize: 14, height: 1.6),
+                            color: Colors.white,
+                            fontSize: 14,
+                            height: 1.6),
                       ),
                     ],
                   ],
                 ),
               ),
             ),
-          // ফিচার্ড সূরা (admin থেকে)
           if (config.featEnabled)
             SliverToBoxAdapter(
               child: _FeaturedCard(config: config),
             ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                childAspectRatio: 0.92,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, i) => _MenuCard(item: items[i]),
-                childCount: items.length,
+          for (final cat in cats) ...[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding:
+                    const EdgeInsets.fromLTRB(16, 18, 16, 8),
+                child: Text(
+                  cat.title,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
-          ),
+            SliverPadding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16),
+              sliver: SliverGrid(
+                gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.78,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) =>
+                      _MenuCard(item: cat.items[i]),
+                  childCount: cat.items.length,
+                ),
+              ),
+            ),
+          ],
           const SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 4, 16, 28),
+              padding: EdgeInsets.fromLTRB(16, 20, 16, 28),
               child: Text(
                 'رَبِّ زِدْنِي عِلْمًا\n"হে আমার প্রতিপালক! আমার জ্ঞান বৃদ্ধি করুন।" — সূরা ত্বহা: ১১৪',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black54, height: 1.7),
+                style: TextStyle(fontSize: 13, height: 1.7),
               ),
             ),
           ),
@@ -288,24 +421,28 @@ class _FeaturedCard extends StatelessWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (_) => SurahReaderScreen(surah: s)),
+                    builder: (_) =>
+                        SurahReaderScreen(surah: s)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(18),
                 child: Row(
                   children: [
-                    const Text('⭐', style: TextStyle(fontSize: 36)),
+                    const Text('⭐',
+                        style: TextStyle(fontSize: 36)),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
                             config.featTitle.isNotEmpty
                                 ? config.featTitle
                                 : 'ফিচার্ড সূরা',
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 13),
+                                color: Colors.white70,
+                                fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -319,7 +456,8 @@ class _FeaturedCard extends StatelessWidget {
                             Text(
                               config.featDesc,
                               style: const TextStyle(
-                                  color: Colors.white70, fontSize: 13),
+                                  color: Colors.white70,
+                                  fontSize: 13),
                             ),
                         ],
                       ),
@@ -337,15 +475,6 @@ class _FeaturedCard extends StatelessWidget {
   }
 }
 
-class _MenuItem {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final Widget screen;
-  const _MenuItem(this.title, this.subtitle, this.icon, this.color, this.screen);
-}
-
 class _MenuCard extends StatelessWidget {
   final _MenuItem item;
   const _MenuCard({required this.item});
@@ -360,29 +489,26 @@ class _MenuCard extends StatelessWidget {
           MaterialPageRoute(builder: (_) => item.screen),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(
+              vertical: 12, horizontal: 6),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 58,
-                height: 58,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
                   color: item.color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(item.icon, size: 30, color: item.color),
+                child:
+                    Icon(item.icon, size: 24, color: item.color),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 item.title,
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item.subtitle,
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,

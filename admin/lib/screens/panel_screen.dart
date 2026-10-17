@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/github_api.dart';
 import 'login_screen.dart';
+import 'content_screen.dart';
 
 class PanelScreen extends StatefulWidget {
   const PanelScreen({super.key});
@@ -164,6 +165,15 @@ class _PanelScreenState extends State<PanelScreen> {
       appBar: AppBar(
         title: const Text('Admin Panel'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.library_books),
+            tooltip: 'কনটেন্ট ম্যানেজ',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ContentScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loading ? null : _load,

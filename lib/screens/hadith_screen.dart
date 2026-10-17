@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../data/hadith_data.dart';
+import '../data/dynamic_content.dart';
 
 class HadithScreen extends StatefulWidget {
   const HadithScreen({super.key});
@@ -13,10 +13,11 @@ class _HadithScreenState extends State<HadithScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final topics = ['সব', ...{for (var h in hadiths) h.topic}];
+    final allHadiths = DynamicContent.allHadiths;
+    final topics = ['সব', ...{for (var h in allHadiths) h.topic}];
     final filtered = _topic == 'সব'
-        ? hadiths
-        : hadiths.where((h) => h.topic == _topic).toList();
+        ? allHadiths
+        : allHadiths.where((h) => h.topic == _topic).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('হাদিস সংকলন')),

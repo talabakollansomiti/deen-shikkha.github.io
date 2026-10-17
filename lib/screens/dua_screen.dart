@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-import '../data/dua_data.dart';
+import '../data/dynamic_content.dart';
 
 class DuaScreen extends StatelessWidget {
   const DuaScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final allDuas = DynamicContent.allDuas;
     return Scaffold(
       appBar: AppBar(title: const Text('দোয়া ও যিকির')),
       body: ListView.builder(
         padding: const EdgeInsets.all(12),
-        itemCount: duas.length,
+        itemCount: allDuas.length,
         itemBuilder: (context, i) {
-          final d = duas[i];
+          final d = allDuas[i];
           return Card(
             margin: const EdgeInsets.only(bottom: 10),
             child: ExpansionTile(
